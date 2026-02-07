@@ -1,0 +1,234 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": { "baseURL": "http://localhost:11434/v1" },
+      "models": {
+        "qwen3:14b": { "name": "Qwen 3.0 14b" },
+        "deepseek-coder-v2": { "name": "DeepSeek Coder v2" },
+        "deepseek-r1": { "name": "DeepSeek R1" },
+        "llama3.1:8b": { "name": "Llama 3.1 8B" }
+      }
+    },
+    "google": {
+      "options": { "apiKey": "<YOUR_GOOGLE_GEMINI_API_KEY>" },
+      "models": { "gemini-2.5-flash": { "name": "Gemini 2.5 Flash" } }
+    },
+    "github-copilot": {
+      "models": {
+        "claude-opus-4.5": {
+          "variants": {
+            "thinking": {
+              "thinking": {
+                "type": "enabled",
+                "budgetTokens": 4000
+              }
+            },
+            "max": {
+              "thinking": {
+                "type": "enabled",
+                "budgetTokens": 15999
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "mcp": {
+    "brave-search": {
+      "type": "local",
+      "command": ["npx", "-y", "@brave/brave-search-mcp-server"],
+      "enabled": true,
+      "environment": { "BRAVE_API_KEY": "<YOUR_BRAVE_API_KEY>" }
+    },
+    "fetch": {
+      "type": "local",
+      "command": ["uvx", "mcp-server-fetch"],
+      "enabled": true
+    },
+    "blender-mcp": {
+      "type": "local",
+      "command": ["uvx", "blender-mcp"],
+      "enabled": false
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["npx", "-y", "chrome-devtools-mcp@latest"],
+      "enabled": false
+    },
+    "paper-search": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "--from",
+        "paper-search-mcp",
+        "python",
+        "-m",
+        "paper_search_mcp.server"
+      ],
+      "enabled": false
+    }
+  },
+  "permission": {
+    "read": {
+      "*": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow",
+      "~/Downloads/**": "allow"
+    },
+    "write": {
+      "*": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow",
+      "~/Downloads/**": "allow"
+    },
+    "edit": {
+      "*": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow",
+      "~/Downloads/**": "allow"
+    },
+    "list": {
+      "*": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow",
+      "~/Downloads/**": "allow"
+    },
+    "glob": {
+      "*": "allow",
+      "<YOUR_WORKING_DIR>/**": "allow",
+      "~/Downloads/**": "allow"
+    },
+    "grep": {
+      "*": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow",
+      "~/Downloads/**": "allow"
+    },
+    "todoread": "allow",
+    "todowrite": "allow",
+    "skill": "allow",
+    "bash": {
+      "*": "allow",
+      "rm -rf *": "ask",
+      "rm -r *": "ask",
+      "git push --force*": "ask",
+      "git reset --hard*": "ask",
+      "git filter-branch*": "ask",
+      "git clean *": "ask",
+      "kill *": "ask",
+      "killall *": "ask",
+      "pkill *": "ask",
+      "osascript*": "ask",
+      "*send*mail*": "deny",
+      "*send*message*": "deny",
+      "*outgoing message*send*": "deny"
+    },
+    "external_directory": {
+      "*": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow",
+      "~/Downloads/**": "allow"
+    },
+    "mcp__fetch_*": {
+      "*": "ask",
+      "*://localhost*": "deny",
+      "*://127.*": "deny",
+      "*://0.0.0.0*": "deny",
+      "*://10.*": "deny",
+      "*://172.1?.*": "deny",
+      "*://172.2?.*": "deny",
+      "*://172.3[01].*": "deny",
+      "*://192.168.*": "deny",
+      "*://169.254.*": "deny",
+      "*://*.local*": "deny",
+      "*://*.internal*": "deny"
+    }
+  },
+  "tui": { "scroll_acceleration": { "enabled": true } },
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "variant": "max",
+      "model": "<YOUR_STRONGER_MODEL>"
+    },
+    "plan": {
+      "mode": "primary",
+      "variant": "max",
+      "model": "<YOUR_STRONGER_MODEL>"
+    },
+    "task": {
+      "mode": "primary",
+      "model": "<YOUR_PREFERRED_TASK_MODEL>",
+      "prompt": "Do not execute any commands unless explicitly instructed by the user."
+    },
+    "vision": {
+      "mode": "subagent",
+      "model": "<YOUR_VISION_MODEL>",
+      "description": "Handles all visual tasks including reading PDFs with embedded images, viewing and analyzing images, image generation, screenshots, diagrams, and any visual content analysis"
+    },
+    "boss": {
+      "mode": "primary",
+      "model": "<YOUR_STRONGER_MODEL>",
+      "tools": {
+        "question": false
+      },
+      "permission": {
+        "task": {
+          "worker": "allow",
+          "coworker": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
+      },
+      "prompt": "{file:./prompts/boss.md}"
+    },
+    "worker": {
+      "mode": "subagent",
+      "hidden": true,
+      "model": "<YOUR_WORKER_MODEL>",
+      "tools": {
+        "question": false,
+        "todowrite": false,
+        "todoread": false
+      },
+      "steps": 50,
+      "prompt": "{file:./prompts/worker.md}"
+    },
+    "coworker": {
+      "mode": "subagent",
+      "hidden": true,
+      "model": "<YOUR_FALLBACK_MODEL>",
+      "tools": {
+        "question": false,
+        "todowrite": false,
+        "todoread": false
+      },
+      "steps": 50,
+      "prompt": "{file:./prompts/coworker.md}"
+    },
+    "superboss": {
+      "mode": "primary",
+      "model": "<YOUR_STRONGER_MODEL>",
+      "tools": {
+        "question": false
+      },
+      "permission": {
+        "task": {
+          "hardworker": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
+      },
+      "prompt": "{file:./prompts/superboss.md}"
+    },
+    "hardworker": {
+      "mode": "subagent",
+      "hidden": true,
+      "model": "<YOUR_WORKER_MODEL>",
+      "tools": {
+        "question": false
+      },
+      "steps": 50,
+      "prompt": "{file:./prompts/hardworker.md}"
+    }
+  }
+}

@@ -1,0 +1,77 @@
+# Git configuration for agents repository
+# 
+# To use this configuration, run:
+#   git config --local include.path ../.gitconfig
+#
+# Or manually add to .git/config:
+#   [include]
+#       path = ../.gitconfig
+
+[core]
+    # Treat symlinks properly (don't follow them for content)
+    # This is important if you create symlinks from ~/.config/ to this repo
+    symlinks = true
+    
+    # Don't show untracked files that might be created by OpenCode
+    # (like node_modules, lock files if they appear in subdirectories)
+    # Note: These are also in .gitignore
+
+[diff]
+    # Show symlink targets in diffs
+    noprefix = false
+
+[status]
+    # Show submodule/symlink info in status
+    showUntrackedFiles = all
+
+# Aliases for managing this dotfiles-style repo
+[alias]
+    # Show which files differ between repo and installed config
+    diff-config = "!f() { \
+        echo '=== Checking ~/.config/opencode/opencode.json ===' && \
+        diff -u ~/.config/opencode/opencode.json config/opencode/opencode.json 2>/dev/null || echo 'Files differ or not installed'; \
+        echo ''; \
+        echo '=== Checking commands ===' && \
+        for f in config/opencode/commands/*.md; do \
+            cmd=$(basename "$f"); \
+            if [ -f ~/.config/opencode/commands/\"$cmd\" ]; then \
+                diff -u ~/.config/opencode/commands/\"$cmd\" \"\$f\" 2>/dev/null && echo \"\$cmd: same\" || echo \"\$cmd: differs\"; \
+            else \
+                echo \"\$cmd: not installed\"; \
+            fi; \
+        done; \
+    }; f"
+    
+    # Copy current config from system to repo (backup)
+    backup-config = "!f() { \
+        cp ~/.config/opencode/opencode.json config/opencode/opencode.json && \
+        cp ~/.config/opencode/commands/*.md config/opencode/commands/ && \
+        echo 'Backed up current config to repo'; \
+    }; f"
+    
+    # Install config from repo to system
+    install-config = "!f() { \
+        mkdir -p ~/.config/opencode/commands && \
+        cp config/opencode/opencode.json ~/.config/opencode/opencode.json && \
+        cp config/opencode/commands/*.md ~/.config/opencode/commands/ && \
+        echo 'Installed config from repo to ~/.config/opencode/'; \
+    }; f"
+    
+    # Create symlinks instead of copying
+    link-config = "!f() { \
+        mkdir -p ~/.config/opencode/commands && \
+        ln -sf \"$(pwd)/config/opencode/opencode.json\" ~/.config/opencode/opencode.json && \
+        for f in config/opencode/commands/*.md; do \
+            ln -sf \"$(pwd)/\$f\" ~/.config/opencode/commands/; \
+        done && \
+        echo 'Created symlinks from repo to ~/.config/opencode/'; \
+    }; f"
+
+# Useful for tracking when configs change
+[commit]
+    # Include diff in commit message for config files
+    verbose = true
+
+# Ignore dirty submodules if any
+[submodule]
+    recurse = false

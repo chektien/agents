@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+bun.lock
+package.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Environment files with secrets
+.env
+.env.local
+*.env
+
+# OpenCode generated files (when testing locally)
+.opencode/node_modules/
+opencode.lock
+prompt/
