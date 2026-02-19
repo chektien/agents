@@ -30,29 +30,30 @@ The new superboss/hardworker system provides optimized orchestration for large t
                                       Phase 2: Superboss picks up remainder
 ```
 
-### Legacy System (V2): Boss-Worker-Coworker
+### Legacy System (V2 → V3): Boss-Worker-Coworker
 
-The original three-tier hierarchy is maintained for backward compatibility:
+The boss system has been upgraded with a Plan, Delegate, Validate, Re-delegate cycle using reviewer/thinker/vision subagents:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  BOSS - Orchestrator                                    │
-│  • Plans and delegates work                             │
-│  • Monitors progress                                    │
-│  • Verifies quality using stronger model                │
-│  • Handles recovery and escalation                      │
+│  BOSS - Orchestrator (V3 Architecture)                  │
+│  • Plans work (consults @thinker for strategy)          │
+│  • Delegates to worker/coworker                         │
+│  • Validates via @reviewer (independent quality check)  │
+│  • Re-delegates fixes (max 10 rounds per task)          │
+│  • Uses @vision for visual verification                 │
 └─────────────────────────────────────────────────────────┘
                            │
-            ┌──────────────┴──────────────┐
-            │                             │
-            ▼                             ▼
-┌──────────────────────┐      ┌──────────────────────┐
-│ WORKER               │      │ COWORKER             │
-│ • Cost-effective     │      │ • Fallback agent     │
-│ • Fast execution     │      │ • Complex tasks      │
-│ • Step limit: 50     │      │ • Step limit: 50     │
-│ • Does bulk of work  │      │                      │
-└──────────────────────┘      └──────────────────────┘
+            ┌──────────────┼──────────────┐
+            │              │              │
+            ▼              ▼              ▼
+┌──────────────────┐ ┌──────────┐ ┌──────────────────────┐
+│ WORKER           │ │ COWORKER │ │ SUBAGENTS            │
+│ • Cost-effective │ │ • Fallback│ │ • @reviewer (verify) │
+│ • Fast execution │ │ • Complex │ │ • @thinker (plan)    │
+│ • Step limit: 50 │ │ • tasks   │ │ • @vision (visual)   │
+│ • Does bulk work │ │          │ │                      │
+└──────────────────┘ └──────────┘ └──────────────────────┘
 ```
 
 ## Why These Architectures?
@@ -63,11 +64,13 @@ The original three-tier hierarchy is maintained for backward compatibility:
 3. **Context Efficiency**: Minimal back-and-forth; superboss finishes remaining work
 4. **Scalability**: Handles large task queues in two phases maximum
 
-**Boss-Worker-Coworker (V2 - Legacy):**
+**Boss-Worker-Coworker (V3 Architecture):**
 1. **Cost Optimization**: Use cheaper models for 80% of work
-2. **Quality Assurance**: Use stronger models for verification and complex tasks
-3. **Fault Tolerance**: Automatic fallback when workers fail
-4. **Progress Tracking**: Shared standup.md with timestamped coordination markers
+2. **Quality Assurance**: Independent reviewer subagent validates results
+3. **Fault Tolerance**: Automatic fallback and re-delegation loop (max 10 rounds)
+4. **Strategic Planning**: Thinker subagent for complex planning and failure diagnosis
+5. **Visual Verification**: Vision subagent for screenshots, PDFs, and visual debugging
+6. **Progress Tracking**: Shared standup.md with timestamped coordination markers
 
 ## Installation
 
@@ -118,14 +121,17 @@ The superboss will:
 4. **Delegate mode**: Spawn @hardworker for routine tasks, then finish remaining work yourself
 5. Maximum 2 phases — no respawning
 
-### Starting the System (V2 Boss - Legacy)
+### Starting the System (V3 Boss)
 
 The boss will:
 1. Read your standup.md DETAILED-TODO section
-2. Create an execution plan
-3. Delegate tasks to the worker
-4. Monitor and verify results
-5. Escalate to coworker when needed
+2. Consult @thinker for strategic planning (if needed)
+3. Create an execution plan
+4. Delegate tasks to the worker
+5. Validate results via @reviewer (independent quality check)
+6. Re-delegate fixes if reviewer finds issues (max 10 rounds)
+7. Escalate to coworker when needed
+8. Use @vision for visual verification tasks
 
 ### Coordination Markers (V3)
 
@@ -156,14 +162,17 @@ Superboss and Hardworker use timestamped markers in standup.md:
 - `[hardworker HH:MM] CONTEXT: ~XX%` - Context usage report
 - `[hardworker HH:MM] SUMMARY` - Final summary before exit
 
-### Markers Reference (V2 Legacy)
+### Markers Reference (V3 Boss)
 
-- `[worker HH:MM] IN PROGRESS: description` - Worker starts task
+- `[worker HH:MM] STARTED: description` - Worker starts task
 - `[worker HH:MM] DONE: summary, commit hash` - Worker completes
 - `[worker HH:MM] FAILED: obstacle description` - Worker reports failure
 - `[boss HH:MM] DECISION: switching to @coworker` - Boss escalates
+- `[boss HH:MM] REDELEGATING (round N/10): reviewer findings` - Boss re-delegates fixes
+- `[boss HH:MM] ESCALATE: task failed 10 rounds` - Boss escalates to user
 - `[boss HH:MM] REVIEW: issues found` - Boss rejects, needs fixes
 - `[boss HH:MM] VERIFIED: confirmation` - Boss accepts work
+- `[boss HH:MM] SESSION COMPLETE: stats` - Session summary
 - `[coworker HH:MM] IN PROGRESS: description` - Coworker handling complex task
 
 ## Configuration Files
@@ -174,31 +183,47 @@ Superboss and Hardworker use timestamped markers in standup.md:
 - **superboss**: Primary orchestrator (stronger model)
 - **hardworker**: Serial task executor (worker model, hidden)
 
-**V2 (Legacy):**
-- **boss**: Primary orchestrator
+**V3 Boss (Current):**
+- **boss**: Primary orchestrator with Plan/Delegate/Validate/Re-delegate cycle
 - **worker**: Cost-effective executor (hidden)
 - **coworker**: Fallback for complex tasks (hidden)
+- **reviewer**: Independent quality verification (hidden)
+- **thinker**: Strategic planning and failure diagnosis (hidden, read-only)
+- **vision**: Visual tasks and verification (hidden)
+
+**Standalone:**
+- **build**: Code implementation (stronger model, max tokens)
+- **simple**: Simple tasks with minimal overhead (worker model)
+- **plan**: Planning and architecture (stronger model, max tokens)
+- **task**: General task execution
 
 ### Prompts (`prompts/`)
 
 Detailed system prompts for each agent:
 
-**V3:**
+**V3 Superboss:**
 - `superboss.md`: Orchestration, solo/delegate decision, quality verification
 - `hardworker.md`: Serial task execution, self-verification
 
-**V2:**
-- `boss.md`: Orchestration and quality verification logic
+**V3 Boss:**
+- `boss.md`: Plan/Delegate/Validate/Re-delegate orchestration
 - `worker.md`: Task execution and self-verification
 - `coworker.md`: Complex problem handling
+- `reviewer.md`: Independent quality verification with fresh context
+- `thinker.md`: Read-only strategic planning and failure diagnosis
+- `vision.md`: Visual tasks, screenshots, PDF analysis
+
+**Standalone:**
+- `build.md`: Code implementation and writing
 
 ### Commands (`commands/`)
 
 **Orchestration (V3):**
 - `go-superboss`: Start superboss orchestration (solo or delegate mode) - RECOMMENDED
 
-**Orchestration (V2):**
-- `go-boss`: Start boss-worker-coworker orchestration
+**Orchestration (V3 Boss):**
+- `go-boss`: Start boss orchestration with Plan/Delegate/Validate/Re-delegate cycle
+- `review-loop`: Fresh-eyes review loop where N workers sequentially review/fix subtasks
 
 **Standup Management:**
 - `add-todo`: Create GitHub issues from DETAILED-TODO (today/tomorrow)
@@ -216,6 +241,7 @@ Detailed system prompts for each agent:
 ### Skills (`skills/`)
 
 Reusable instruction modules:
+- `frontend-design`: Guidelines for creating distinctive, production-grade frontend interfaces
 - `git-checkpoint`: Best practices for frequent commits
 - `mac-mail`: Apple Mail automation and search guidelines
 - `standup-coordination`: Protocol for progress tracking
@@ -245,10 +271,11 @@ Both orchestration systems perform targeted verification leveraging model streng
 - Uses per-task git commits to review partial work
 - Fixes verification failures immediately before moving to next task
 
-**V2 Boss Quality Checks:**
-- Boss performs quality verification after worker completion
-- Rejects work and retries if issues found
-- Escalates to coworker if worker fails multiple times
+**V3 Boss Quality Checks:**
+- Boss validates results via @reviewer (independent fresh-eyes check)
+- Re-delegates fixes to worker/coworker if reviewer finds issues
+- Maximum 10 re-delegation rounds per task before escalating
+- Boss consults @thinker for failure diagnosis when stuck
 
 ## Customization
 
@@ -294,9 +321,11 @@ Edit `prompts/boss.md` to add or remove verification criteria based on your proj
 - **No Monitoring**: Superboss cannot intervene while hardworker runs
 - **Blocking Pattern**: Two phases maximum — hardworker runs once, superboss finishes rest
 
-**V2 Specific:**
+**V3 Boss Specific:**
+- **Re-delegation Loop**: Boss validates via @reviewer and re-delegates fixes (max 10 rounds)
+- **Strategic Planning**: Boss consults @thinker for complex planning and failure diagnosis
+- **Visual Verification**: Boss uses @vision for screenshot/PDF analysis
 - **Task Batching**: Boss assigns logical groups of related tasks
-- **Real-time Coordination**: Boss monitors and can intervene during worker execution
 - **Escalation**: Boss automatically escalates to coworker on repeated failures
 
 ## Troubleshooting

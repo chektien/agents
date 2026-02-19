@@ -23,7 +23,7 @@ Workflow:
 4. **Draft replies**: Create draft text for user review - **NEVER send automatically**
    - User must review and send manually via Mail.app
 
-Common search terms: CSD3121, DIA, student names, SIT IDs like 2301234
+Common search terms: course codes, module names, student names, student IDs
 
 Related resources:
 - Mail scripts: `<MAIL_SCRIPT_PATH>/scripts/mail*.sh`

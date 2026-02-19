@@ -9,9 +9,9 @@ Configuration files and instructions for AI coding assistants like opencode, cla
 - `AGENTS.md` - General instructions for AI coding agents to follow when working on tasks
 - `opencode/` - Configuration for [opencode](https://opencode.ai/) TUI
   - `opencode.json` - Main configuration file with providers, MCP servers, permissions, and agents
-  - `commands/` - Slash commands for common workflows (standup, mail, orchestration)
-  - `prompts/` - Agent system prompts (superboss, hardworker, boss, worker, coworker)
-  - `skills/` - Reusable instruction modules for common tasks
+  - `commands/` - Slash commands for common workflows (standup, mail, orchestration, review)
+  - `prompts/` - Agent system prompts (superboss, hardworker, boss, worker, coworker, reviewer, thinker, vision, build)
+  - `skills/` - Reusable instruction modules for common tasks (git-checkpoint, mac-mail, standup-coordination, task-execution, frontend-design)
 
 ## Installation
 
@@ -144,10 +144,14 @@ In the opencode TUI, use the `/connect` command to authenticate with providers i
 |-------|------|-------|---------|
 | `superboss` | primary | `<YOUR_STRONGER_MODEL>` | Task orchestration (solo or delegate), quality verification |
 | `hardworker` | subagent (hidden) | `<YOUR_WORKER_MODEL>` | Serial task execution (50 steps), per-task git commits |
-| `boss` [Legacy] | primary | `<YOUR_STRONGER_MODEL>` | Task orchestration, planning, quality verification |
-| `worker` [Legacy] | subagent (hidden) | `<YOUR_WORKER_MODEL>` | Cost-effective task execution (50 steps) |
-| `coworker` [Legacy] | subagent (hidden) | `<YOUR_FALLBACK_MODEL>` | Fallback for complex tasks (50 steps) |
+| `boss` | primary | `<YOUR_STRONGER_MODEL>` | Task orchestration with Plan/Delegate/Validate/Re-delegate cycle |
+| `worker` | subagent (hidden) | `<YOUR_WORKER_MODEL>` | Cost-effective task execution (50 steps) |
+| `coworker` | subagent (hidden) | `<YOUR_FALLBACK_MODEL>` | Fallback for complex tasks (50 steps) |
+| `reviewer` | subagent (hidden) | `<YOUR_REVIEW_MODEL>` | Independent quality verification with fresh context |
+| `thinker` | subagent (hidden) | `<YOUR_THINKING_MODEL>` | Read-only strategic planning and failure diagnosis |
+| `vision` | subagent (hidden) | `<YOUR_VISION_MODEL>` | Visual tasks, screenshots, PDF analysis |
 | `build` | primary | `<YOUR_STRONGER_MODEL>` (max) | Code implementation and writing |
+| `simple` | primary | `<YOUR_WORKER_MODEL>` | Simple tasks with minimal overhead |
 | `plan` | primary | `<YOUR_STRONGER_MODEL>` (max) | Planning and architecture |
 | `task` | primary | `<YOUR_PREFERRED_TASK_MODEL>` | Task execution |
 
@@ -176,25 +180,30 @@ The new superboss system provides optimized orchestration with solo/delegate mod
 - Per-task git commits enable granular review
 - Maximum 2 GitHub Copilot requests per session
 
-#### Boss-Worker-Coworker (V2 - Legacy)
+#### Boss-Worker-Coworker (V3 Architecture)
 
-The original three-tier orchestration system is maintained for backward compatibility:
+The three-tier orchestration system now uses a Plan, Delegate, Validate, Re-delegate cycle with reviewer/thinker/vision subagents:
 
 ```bash
-# Start the boss to work through DETAILED-TODO
+# Start the boss with V3 architecture
 /go-boss
 ```
 
 **How it works:**
-1. **Boss** (stronger model) reads standup.md and creates execution plans
+1. **Boss** (stronger model) reads standup.md, consults **@thinker** for strategic planning
 2. **Boss delegates** to **Worker** (worker model) for cost-effective execution
-3. **Worker** completes tasks, updates standup.md with progress markers
-4. If **Worker** fails, **Boss** escalates to **Coworker** (fallback model) for complex tasks
-5. **Boss verifies** all work before proceeding
+3. **Boss validates** results via **@reviewer** (independent fresh-eyes quality check)
+4. If **Reviewer** finds issues, **Boss** re-delegates fixes (max 10 rounds per task)
+5. If **Worker** fails, **Boss** escalates to **Coworker** (fallback model) for complex tasks
+6. **Boss** uses **@vision** for any visual verification needs
+7. **Boss verifies** all work before proceeding
 
 **Benefits:**
 - 80% of work done by cheaper worker model
-- Quality verification by stronger boss model
+- Quality verification by independent reviewer subagent
+- Re-delegation loop ensures issues get fixed (max 10 rounds)
+- Strategic planning via thinker subagent
+- Visual verification via vision subagent
 - Automatic recovery and escalation on failures
 - Progress tracked in standup.md with timestamped markers
 
@@ -205,7 +214,8 @@ The original three-tier orchestration system is maintained for backward compatib
 | Command | Description |
 |---------|-------------|
 | `/go-superboss` | Start superboss orchestration (solo or delegate mode) - RECOMMENDED |
-| `/go-boss` | Start boss-worker-coworker orchestration (legacy) |
+| `/go-boss` | Start boss orchestration with Plan/Delegate/Validate/Re-delegate cycle |
+| `/review-loop` | Fresh-eyes review loop: N workers sequentially review/fix subtasks |
 | `/add-todo` | Create GitHub issues from DETAILED-TODO items (today/tomorrow) |
 | `/add-done` | Add DONE items from closed issues/PRs (today/tomorrow) |
 | `/standup-create` | Convert DETAILED-TODOs to standup TODO bullets |

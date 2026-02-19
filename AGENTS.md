@@ -58,8 +58,9 @@ The following opencode commands automate standup and email workflows. Commands r
 ### Standup & Task Management
 
 - **`/standup-create`** - Convert DETAILED-TODO items into standup TODO bullets with issue links. See `opencode/commands/standup-create.md`
-- **`/do-todo`** - Work through DETAILED-TODO tasks autonomously across all repos. See `opencode/commands/do-todo.md`
+- **`/add-todo`** - Create GitHub issues from DETAILED-TODO items and link to standup. See `opencode/commands/add-todo.md`
 - **`/add-done`** - Add DONE items to standup.md from recent closed issues/PRs. See `opencode/commands/add-done.md`
+- **`/review-loop`** - Fresh-eyes review loop where N workers sequentially review/fix each subtask. See `opencode/commands/review-loop.md`
 - **`/standup-update`** - Update standup.md after completing tasks - mark checkboxes and add completion notes. See `opencode/commands/standup-update.md`
 - **`/open-standup`** - Open Safari with project boards and recent issue/PR links. See `opencode/commands/open-standup.md`
 - **`/post-standup`** - Post standup to Discord (test, production, or dry-run mode). See `opencode/commands/post-standup.md`
@@ -107,26 +108,32 @@ The superboss/hardworker system provides optimized orchestration for large task 
 
 ### Legacy System (V2): Boss-Worker-Coworker
 
-The original three-tier system for backward compatibility:
+The original three-tier system for backward compatibility. Now updated (V3) with Plan, Delegate, Validate, Re-delegate cycle using reviewer/thinker/vision subagents:
 
 **Architecture:**
 - **Boss** (stronger model): Orchestrator, reads standup, plans, verifies quality
 - **Worker** (cheaper model): Executes most tasks cost-effectively
 - **Coworker** (fallback model): Handles complex tasks when worker fails
+- **Reviewer** (subagent): Independent quality verification with fresh context
+- **Thinker** (subagent): Strategic planning and failure diagnosis (read-only)
+- **Vision** (subagent): Visual tasks, screenshots, PDF analysis
 
 **Execution Flow:**
-1. Boss reads standup.md and creates detailed execution plan
+1. Boss reads standup.md and creates detailed execution plan (consults @thinker for complex planning)
 2. Boss delegates to worker for each task batch
-3. Boss monitors progress via standup.md markers
-4. If worker fails after 2-3 retries, boss escalates to coworker
-5. If coworker fails, boss executes directly as last resort
-6. Boss verifies all work before marking complete
+3. Boss validates results via @reviewer (fresh-eyes quality check)
+4. If reviewer finds issues, boss re-delegates fixes (max 10 rounds per task)
+5. If worker fails after retries, boss escalates to coworker
+6. Boss uses @vision for any visual verification needs
+7. Boss verifies all work before marking complete
 
-**Key Differences from V3:**
+**Key Differences from V3 Superboss:**
 - Boss can monitor and intervene during worker execution (not blocking)
 - Escalation chain: worker → coworker → boss
 - Automatic respawning of workers for remaining tasks after failure
-- Real-time coordination via standup.md markers
+- Re-delegation loop with @reviewer validation (max 10 rounds)
+- @thinker consultation for planning and failure diagnosis
+- @vision for visual tasks and verification
 
 ## Path Placeholders
 
@@ -157,7 +164,7 @@ Commands use the following path placeholders that you should replace:
 
 **For all agents**:
 - Search using `<MAIL_SCRIPT_PATH>/scripts/mail.sh search "<search-term>" [limit]
-- Common search terms: `CSD3121`, `DIA`, student names, SIT IDs like `2301234`
+- Common search terms: course codes, module names, student names, student IDs
 - Open specific emails: `<MAIL_SCRIPT_PATH>/scripts/mail.sh open <number>`
 - Read programmatically: `find ~/Library/Mail -name "*.emlx" -type f -mtime -7 | xargs grep -l "<term>" | head -N | while read f; do cat "$f" | head -150; done`
 - Draft replies only - **NEVER send automatically**. User must review and send via Mail.app.

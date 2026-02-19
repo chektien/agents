@@ -1,39 +1,23 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "default_agent": "task",
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
       "options": { "baseURL": "http://localhost:11434/v1" },
       "models": {
+        "gpt-oss": { "name": "GPT-OSS" },
+        "mistral-small3.2": { "name": "Mistral Small 3.2" },
         "qwen3:14b": { "name": "Qwen 3.0 14b" },
+        "qwen3-coder": { "name": "Qwen 3 Coder" },
         "deepseek-coder-v2": { "name": "DeepSeek Coder v2" },
         "deepseek-r1": { "name": "DeepSeek R1" },
         "llama3.1:8b": { "name": "Llama 3.1 8B" }
       }
     },
     "google": {
-      "options": { "apiKey": "<YOUR_GOOGLE_GEMINI_API_KEY>" },
+      "options": { "apiKey": "{env:GOOGLE_GEMINI_API_KEY}" },
       "models": { "gemini-2.5-flash": { "name": "Gemini 2.5 Flash" } }
-    },
-    "github-copilot": {
-      "models": {
-        "claude-opus-4.5": {
-          "variants": {
-            "thinking": {
-              "thinking": {
-                "type": "enabled",
-                "budgetTokens": 4000
-              }
-            },
-            "max": {
-              "thinking": {
-                "type": "enabled",
-                "budgetTokens": 15999
-              }
-            }
-          }
-        }
-      }
     }
   },
   "mcp": {
@@ -41,7 +25,7 @@
       "type": "local",
       "command": ["npx", "-y", "@brave/brave-search-mcp-server"],
       "enabled": true,
-      "environment": { "BRAVE_API_KEY": "<YOUR_BRAVE_API_KEY>" }
+      "environment": { "BRAVE_API_KEY": "{env:BRAVE_API_KEY}" }
     },
     "fetch": {
       "type": "local",
@@ -56,7 +40,7 @@
     "chrome-devtools": {
       "type": "local",
       "command": ["npx", "-y", "chrome-devtools-mcp@latest"],
-      "enabled": false
+      "enabled": true
     },
     "paper-search": {
       "type": "local",
@@ -69,38 +53,68 @@
         "paper_search_mcp.server"
       ],
       "enabled": false
+    },
+    "xcodebuild": {
+      "type": "local",
+      "command": ["uvx", "mcpxcodebuild"],
+      "enabled": false
     }
   },
   "permission": {
     "read": {
-      "*": "ask",
-      "<YOUR_WORKING_DIR>/**": "allow",
-      "~/Downloads/**": "allow"
+      "*": "allow",
+      "~/.ssh/**": "ask",
+      "~/.aws/**": "ask",
+      "~/.npmrc": "ask",
+      "~/.netrc": "ask",
+      "~/.bash_profile": "ask",
+      "~/.zshrc": "ask",
+      "~/.bashrc": "ask",
+      "~/Library/**": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow"
     },
     "write": {
-      "*": "ask",
-      "<YOUR_WORKING_DIR>/**": "allow",
-      "~/Downloads/**": "allow"
+      "*": "allow",
+      "~/.ssh/**": "ask",
+      "~/.aws/**": "ask",
+      "~/.npmrc": "ask",
+      "~/.netrc": "ask",
+      "~/.bash_profile": "ask",
+      "~/.zshrc": "ask",
+      "~/.bashrc": "ask",
+      "~/Library/**": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow"
     },
     "edit": {
-      "*": "ask",
-      "<YOUR_WORKING_DIR>/**": "allow",
-      "~/Downloads/**": "allow"
+      "*": "allow",
+      "~/.ssh/**": "ask",
+      "~/.aws/**": "ask",
+      "~/.npmrc": "ask",
+      "~/.netrc": "ask",
+      "~/.bash_profile": "ask",
+      "~/.zshrc": "ask",
+      "~/.bashrc": "ask",
+      "~/Library/**": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow"
     },
     "list": {
-      "*": "ask",
-      "<YOUR_WORKING_DIR>/**": "allow",
-      "~/Downloads/**": "allow"
+      "*": "allow",
+      "~/.ssh/**": "ask",
+      "~/.aws/**": "ask",
+      "~/Library/**": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow"
     },
     "glob": {
-      "*": "allow",
-      "<YOUR_WORKING_DIR>/**": "allow",
-      "~/Downloads/**": "allow"
+      "*": "allow"
     },
     "grep": {
-      "*": "ask",
-      "<YOUR_WORKING_DIR>/**": "allow",
-      "~/Downloads/**": "allow"
+      "*": "allow",
+      "~/.ssh/**": "ask",
+      "~/.aws/**": "ask",
+      "~/.npmrc": "ask",
+      "~/.netrc": "ask",
+      "~/Library/**": "ask",
+      "<YOUR_WORKING_DIR>/**": "allow"
     },
     "todoread": "allow",
     "todowrite": "allow",
@@ -117,14 +131,35 @@
       "killall *": "ask",
       "pkill *": "ask",
       "osascript*": "ask",
+      "osascript */scripts/mail-search*": "allow",
+      "osascript */scripts/mail-open*": "allow",
+      "osascript */scripts/open-standup*": "allow",
+      "osascript */scripts/post-standup*": "allow",
       "*send*mail*": "deny",
       "*send*message*": "deny",
       "*outgoing message*send*": "deny"
     },
     "external_directory": {
-      "*": "ask",
+      "*": "allow",
+      "/": "deny",
+      "/System/**": "deny",
+      "/bin/**": "deny",
+      "/sbin/**": "deny",
+      "/usr/**": "deny",
+      "/etc/**": "deny",
+      "/var/**": "deny",
+      "/private/**": "deny",
+      "/tmp/**": "deny",
+      "~/.ssh/**": "ask",
+      "~/.aws/**": "ask",
+      "~/.npmrc": "ask",
+      "~/.netrc": "ask",
+      "~/.bash_profile": "ask",
+      "~/.zshrc": "ask",
+      "~/.bashrc": "ask",
+      "~/Library/**": "ask",
       "<YOUR_WORKING_DIR>/**": "allow",
-      "~/Downloads/**": "allow"
+      "~": "ask"
     },
     "mcp__fetch_*": {
       "*": "ask",
@@ -143,36 +178,32 @@
   },
   "tui": { "scroll_acceleration": { "enabled": true } },
   "agent": {
+    "task": {
+      "mode": "primary",
+      "model": "<YOUR_PREFERRED_TASK_MODEL>"
+    },
     "build": {
       "mode": "primary",
-      "variant": "max",
-      "model": "<YOUR_STRONGER_MODEL>"
+      "model": "<YOUR_STRONGER_MODEL>",
+      "prompt": "{file:./prompts/build.md}"
     },
     "plan": {
       "mode": "primary",
-      "variant": "max",
       "model": "<YOUR_STRONGER_MODEL>"
     },
-    "task": {
+    "simple": {
       "mode": "primary",
-      "model": "<YOUR_PREFERRED_TASK_MODEL>",
-      "prompt": "Do not execute any commands unless explicitly instructed by the user."
-    },
-    "vision": {
-      "mode": "subagent",
-      "model": "<YOUR_VISION_MODEL>",
-      "description": "Handles all visual tasks including reading PDFs with embedded images, viewing and analyzing images, image generation, screenshots, diagrams, and any visual content analysis"
+      "model": "<YOUR_LIGHTWEIGHT_MODEL>"
     },
     "boss": {
       "mode": "primary",
       "model": "<YOUR_STRONGER_MODEL>",
-      "tools": {
-        "question": false
-      },
       "permission": {
         "task": {
+          "thinker": "allow",
           "worker": "allow",
-          "coworker": "allow"
+          "reviewer": "allow",
+          "vision": "allow"
         },
         "skill": {
           "*": "allow"
@@ -185,11 +216,9 @@
       "hidden": true,
       "model": "<YOUR_WORKER_MODEL>",
       "tools": {
-        "question": false,
-        "todowrite": false,
-        "todoread": false
+        "question": false
       },
-      "steps": 50,
+      "description": "Task executor for code, writing, and config tasks. Works through assigned task batches, updates standup.md with progress, and commits after each task",
       "prompt": "{file:./prompts/worker.md}"
     },
     "coworker": {
@@ -197,12 +226,45 @@
       "hidden": true,
       "model": "<YOUR_FALLBACK_MODEL>",
       "tools": {
-        "question": false,
-        "todowrite": false,
-        "todoread": false
+        "question": false
       },
-      "steps": 50,
+      "description": "Fallback task executor for complex tasks that the primary worker failed to complete, stronger analytical capabilities",
       "prompt": "{file:./prompts/coworker.md}"
+    },
+    "reviewer": {
+      "mode": "subagent",
+      "hidden": true,
+      "model": "<YOUR_WORKER_MODEL>",
+      "tools": {
+        "question": false
+      },
+      "description": "Independent reviewer with fresh context. Reviews completed work against acceptance criteria, runs tests, checks for bugs, and returns a structured PASS/FAIL verdict with specific issues found",
+      "prompt": "{file:./prompts/reviewer.md}"
+    },
+    "vision": {
+      "mode": "subagent",
+      "hidden": true,
+      "model": "<YOUR_VISION_MODEL>",
+      "tools": {
+        "question": false
+      },
+      "description": "Handles all visual tasks including reading PDFs with embedded images, Chrome DevTools debugging, screenshots, diagrams, and any visual content analysis",
+      "prompt": "{file:./prompts/vision.md}"
+    },
+    "thinker": {
+      "mode": "subagent",
+      "hidden": true,
+      "model": "<YOUR_STRONGER_MODEL>",
+      "tools": {
+        "question": false,
+        "edit": false,
+        "write": false,
+        "patch": false,
+        "task": false,
+        "skill": false
+      },
+      "description": "Read-only strategic consultant and planner. Produces structured execution plans for complex sessions, and diagnoses repeated worker failures. Never modifies files.",
+      "prompt": "{file:./prompts/thinker.md}"
     },
     "superboss": {
       "mode": "primary",

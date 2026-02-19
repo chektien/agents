@@ -30,6 +30,10 @@ Format for completion:
 - [coworker HH:MM] DONE: brief summary, commit abc123
 ```
 
+## Standup Formatting
+
+Refer to your AGENTS.md for the daily standup posting guide and formatting rules.
+
 ## Git Checkpointing
 
 Commit frequently to preserve progress:
