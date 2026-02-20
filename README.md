@@ -2,7 +2,7 @@
 
 Configuration files and instructions for AI coding assistants like opencode, claude-code, and similar tools.
 
-**⚠️ SECURITY NOTICE**: This repository contains example configuration files with placeholder API keys. **Never commit real API keys to git.** Use environment variables (`{env:VAR_NAME}`) or the `/connect` command in opencode instead. See [Security Warning](#security-warning) below.
+**SECURITY NOTICE**: This repository contains example configuration files with placeholder API keys. **Never commit real API keys to git.** Use environment variables (`{env:VAR_NAME}`) or the `/connect` command in opencode instead. See [Security Warning](#security-warning) below.
 
 ## Contents
 
@@ -10,7 +10,7 @@ Configuration files and instructions for AI coding assistants like opencode, cla
 - `opencode/` - Configuration for [opencode](https://opencode.ai/) TUI
   - `opencode.json` - Main configuration file with providers, MCP servers, permissions, and agents
   - `commands/` - Slash commands for common workflows (standup, mail, orchestration, review)
-  - `prompts/` - Agent system prompts (superboss, hardworker, boss, worker, coworker, reviewer, thinker, vision, build)
+  - `prompts/` - Agent system prompts (superboss, hardworker, boss, altboss, worker, coworker, reviewer, thinker, vision, covision, build)
   - `skills/` - Reusable instruction modules for common tasks (git-checkpoint, mac-mail, standup-coordination, task-execution, frontend-design)
 
 ## Installation
@@ -140,26 +140,42 @@ In the opencode TUI, use the `/connect` command to authenticate with providers i
 
 ## Agents
 
-| Agent | Mode | Model | Purpose |
-|-------|------|-------|---------|
-| `superboss` | primary | `<YOUR_STRONGER_MODEL>` | Task orchestration (solo or delegate), quality verification |
-| `hardworker` | subagent (hidden) | `<YOUR_WORKER_MODEL>` | Serial task execution (50 steps), per-task git commits |
-| `boss` | primary | `<YOUR_STRONGER_MODEL>` | Task orchestration with Plan/Delegate/Validate/Re-delegate cycle |
-| `worker` | subagent (hidden) | `<YOUR_WORKER_MODEL>` | Cost-effective task execution (50 steps) |
-| `coworker` | subagent (hidden) | `<YOUR_FALLBACK_MODEL>` | Fallback for complex tasks (50 steps) |
-| `reviewer` | subagent (hidden) | `<YOUR_REVIEW_MODEL>` | Independent quality verification with fresh context |
-| `thinker` | subagent (hidden) | `<YOUR_THINKING_MODEL>` | Read-only strategic planning and failure diagnosis |
-| `vision` | subagent (hidden) | `<YOUR_VISION_MODEL>` | Visual tasks, screenshots, PDF analysis |
-| `build` | primary | `<YOUR_STRONGER_MODEL>` (max) | Code implementation and writing |
-| `simple` | primary | `<YOUR_WORKER_MODEL>` | Simple tasks with minimal overhead |
-| `plan` | primary | `<YOUR_STRONGER_MODEL>` (max) | Planning and architecture |
-| `task` | primary | `<YOUR_PREFERRED_TASK_MODEL>` | Task execution |
+### Primary Agents
+
+| Agent | Mode | Model | Context/Output | Purpose |
+|-------|------|-------|----------------|---------|
+| `task` | primary | `<YOUR_PREFERRED_TASK_MODEL>` | varies | Default task execution |
+| `build` | primary | `<YOUR_STRONGER_MODEL>` | varies | Code implementation and writing |
+| `plan` | primary | `<YOUR_STRONGER_MODEL>` | varies | Planning and architecture |
+| `simple` | primary | `<YOUR_LIGHTWEIGHT_MODEL>` | varies | Simple tasks with minimal overhead |
+
+### Orchestration Agents (V3)
+
+#### Superboss-Hardworker System
+
+| Agent | Mode | Model | Context/Output | Purpose |
+|-------|------|-------|----------------|---------|
+| `superboss` | primary | `<YOUR_STRONGER_MODEL>` | varies | Solo/delegate orchestration, quality verification |
+| `hardworker` | subagent (hidden) | `<YOUR_WORKER_MODEL>` | 128k/32k | Serial task execution, per-task git commits |
+
+#### Boss-Worker-Coworker System
+
+| Agent | Mode | Model | Context/Output | Purpose |
+|-------|------|-------|----------------|---------|
+| `boss` | primary | `<YOUR_STRONGER_MODEL>` | varies | Plan/Delegate/Validate/Re-delegate orchestration |
+| `altboss` | primary | `<YOUR_STRONGER_MODEL>` | varies | Alternative boss with different model |
+| `worker` | subagent (hidden) | `<YOUR_WORKER_MODEL>` | 128k/32k | Cost-effective task execution |
+| `coworker` | subagent (hidden) | `<YOUR_FALLBACK_MODEL>` | 400k/128k | Fallback for complex tasks, 3x context |
+| `reviewer` | subagent (hidden) | `<YOUR_REVIEW_MODEL>` | 128k/32k | Independent quality verification |
+| `thinker` | subagent (hidden) | `<YOUR_THINKING_MODEL>` | varies | Read-only strategic planning |
+| `vision` | subagent (hidden) | `<YOUR_VISION_MODEL>` | 128k/64k | Visual tasks, screenshots, PDF analysis |
+| `covision` | subagent (hidden) | `<YOUR_HEAVY_VISION_MODEL>` | 256k/96k | Heavy-duty visual fallback |
 
 ### Using the Multi-Agent Orchestration Systems
 
 #### Superboss-Hardworker (V3 - Recommended)
 
-The new superboss system provides optimized orchestration with solo/delegate modes:
+The superboss system provides optimized orchestration with solo/delegate modes:
 
 ```bash
 # Start superboss to work through DETAILED-TODO (RECOMMENDED)
@@ -182,11 +198,14 @@ The new superboss system provides optimized orchestration with solo/delegate mod
 
 #### Boss-Worker-Coworker (V3 Architecture)
 
-The three-tier orchestration system now uses a Plan, Delegate, Validate, Re-delegate cycle with reviewer/thinker/vision subagents:
+The three-tier orchestration system uses a Plan, Delegate, Validate, Re-delegate cycle with reviewer/thinker/vision subagents:
 
 ```bash
 # Start the boss with V3 architecture
 /go-boss
+
+# Alternative boss with different model
+/go-altboss
 ```
 
 **How it works:**
@@ -196,14 +215,14 @@ The three-tier orchestration system now uses a Plan, Delegate, Validate, Re-dele
 4. If **Reviewer** finds issues, **Boss** re-delegates fixes (max 10 rounds per task)
 5. If **Worker** fails, **Boss** escalates to **Coworker** (fallback model) for complex tasks
 6. **Boss** uses **@vision** for any visual verification needs
-7. **Boss verifies** all work before proceeding
+7. **Boss** uses **@covision** for heavy visual payloads (large PDFs, lengthy DOM snapshots)
 
 **Benefits:**
 - 80% of work done by cheaper worker model
 - Quality verification by independent reviewer subagent
 - Re-delegation loop ensures issues get fixed (max 10 rounds)
 - Strategic planning via thinker subagent
-- Visual verification via vision subagent
+- Visual verification via vision/covision subagents
 - Automatic recovery and escalation on failures
 - Progress tracked in standup.md with timestamped markers
 
@@ -215,6 +234,7 @@ The three-tier orchestration system now uses a Plan, Delegate, Validate, Re-dele
 |---------|-------------|
 | `/go-superboss` | Start superboss orchestration (solo or delegate mode) - RECOMMENDED |
 | `/go-boss` | Start boss orchestration with Plan/Delegate/Validate/Re-delegate cycle |
+| `/go-altboss` | Start altboss orchestration (alternative model) |
 | `/review-loop` | Fresh-eyes review loop: N workers sequentially review/fix subtasks |
 | `/add-todo` | Create GitHub issues from DETAILED-TODO items (today/tomorrow) |
 | `/add-done` | Add DONE items from closed issues/PRs (today/tomorrow) |
@@ -227,7 +247,7 @@ The three-tier orchestration system now uses a Plan, Delegate, Validate, Re-dele
 
 | Command | Description |
 |---------|-------------|
-| `/mail-search` | Search Apple Mail for student emails and correspondence |
+| `/mail-search` | Search Apple Mail for emails and correspondence |
 
 **Note**: Some commands reference external scripts (e.g., in your dotfiles). See command files for required scripts and update `<SCRIPTS_PATH>` placeholders.
 
@@ -241,7 +261,11 @@ The configuration uses several path placeholders that you must customize to your
 ### Model Placeholders in opencode.json
 - `<YOUR_STRONGER_MODEL>` → Stronger model for orchestration and verification
 - `<YOUR_WORKER_MODEL>` → Worker model for cost-effective task execution
-- `<YOUR_FALLBACK_MODEL>` → Fallback model for complex tasks (Legacy V2 only)
+- `<YOUR_FALLBACK_MODEL>` → Fallback model for complex tasks (400k context)
+- `<YOUR_VISION_MODEL>` → Vision model for visual tasks
+- `<YOUR_HEAVY_VISION_MODEL>` → Heavy vision model for large visual payloads (256k context)
+- `<YOUR_LIGHTWEIGHT_MODEL>` → Lightweight model for simple tasks
+- `<YOUR_PREFERRED_TASK_MODEL>` → Default task execution model
 
 ### Path Placeholders in Commands
 Some commands reference scripts in another directory. Replace these placeholders:

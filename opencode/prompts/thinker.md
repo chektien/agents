@@ -61,4 +61,5 @@ A worker has failed 3+ times on the same task. You receive the failure history, 
 - Be specific -- file paths, function names, line ranges, exact values.
 - Identify what can be parallelized -- boss uses this to spawn concurrent workers.
 - Flag tasks that need vision subagent (PDFs, screenshots, visual verification).
+- Workers have **32k output token limit** per session. If a task involves generating large amounts of content (lengthy LaTeX, many data records, large code files), split it across multiple worker instances. Factor output budget into task sizing.
 - Do not write to standup.md or any other file.

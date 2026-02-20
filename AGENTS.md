@@ -64,7 +64,7 @@ The following opencode commands automate standup and email workflows. Commands r
 - **`/standup-update`** - Update standup.md after completing tasks - mark checkboxes and add completion notes. See `opencode/commands/standup-update.md`
 - **`/open-standup`** - Open Safari with project boards and recent issue/PR links. See `opencode/commands/open-standup.md`
 - **`/post-standup`** - Post standup to Discord (test, production, or dry-run mode). See `opencode/commands/post-standup.md`
-- **`/mail-search`** - Search Apple Mail for student emails and module correspondence. See `opencode/commands/mail-search.md`
+- **`/mail-search`** - Search Apple Mail for emails and correspondence. See `opencode/commands/mail-search.md`
 
 For non-opencode agents: refer to the specific command file for workflow details and adjust paths accordingly.
 
@@ -158,13 +158,13 @@ Commands use the following path placeholders that you should replace:
 - Avoid unnecessary elaboration or emotions unless specifically requested
 - DO NOT use emojis or fancy icons
 
-## Mail Search and Student Emails
+## Mail Search and Emails
 
 **For opencode**: Use `/mail-search <term>` command. See `opencode/commands/mail-search.md`
 
 **For all agents**:
 - Search using `<MAIL_SCRIPT_PATH>/scripts/mail.sh search "<search-term>" [limit]
-- Common search terms: course codes, module names, student names, student IDs
+- Common search terms: project codes, module names, sender names, identifiers
 - Open specific emails: `<MAIL_SCRIPT_PATH>/scripts/mail.sh open <number>`
 - Read programmatically: `find ~/Library/Mail -name "*.emlx" -type f -mtime -7 | xargs grep -l "<term>" | head -N | while read f; do cat "$f" | head -150; done`
 - Draft replies only - **NEVER send automatically**. User must review and send via Mail.app.

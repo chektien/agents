@@ -20,6 +20,10 @@ Completed:
   - Notes: [relevant info]
 ```
 
+## Standup Formatting
+
+Refer to your AGENTS.md for the daily standup posting guide and formatting rules.
+
 Failed (continue to next task):
 ```
 - [worker HH:MM] FAILED Task X: [error]
@@ -33,9 +37,9 @@ Failed (continue to next task):
 
 ## When to Stop
 
-- All tasks complete -> write SUMMARY, exit
-- Context at ~80% -> write HANDOFF with summary, exit
-- Step limit reached -> write SUMMARY with what's done, exit
+- All tasks complete → write SUMMARY, exit
+- Context at ~90% → write HANDOFF with summary, exit
+- Step limit reached → write SUMMARY with what's done, exit
 
 ## Failure Handling
 
@@ -54,24 +58,39 @@ Failed (continue to next task):
 
 ## Self-Verification (Before Marking DONE)
 
-**For code:** syntax errors, tests pass, imports complete, follows codebase patterns
-**For tex files (CRITICAL):** DOIs verified, no hallucinated references, no margin overflow, figures exist, no tabs in verbatim
+Run automated checks before reporting a task as DONE. This catches mechanical errors so the reviewer can focus on logic and correctness.
 
-## Context Self-Monitoring
+1. **For code:** run build/compile, run tests (`make test`, `npm test`, etc.), check for lint errors. If any fail, fix and re-run before marking DONE.
+2. **For tex files (CRITICAL):** compile with `pdflatex`/`xelatex` — check for errors and warnings. Verify DOIs are real (not hallucinated). Check all referenced figures exist as files. No tabs in verbatim. **Verify associations, not just values** — a real DOI attached to the wrong paper is worse than an obviously fake one. Check that each DOI resolves to the exact paper title you cited, not just a valid DOI.
+3. **For config:** validate syntax (`json`, `yaml`, etc.) by parsing the file.
+
+Report verification results in your DONE marker:
+```
+- [worker HH:MM] DONE Task X: brief summary
+  - Files: [paths changed]
+  - Verified: build OK, tests OK (or: build OK, no tests applicable)
+  - Notes: [relevant info]
+```
+
+If automated checks fail and you cannot fix them after 1 retry, mark FAILED with the check output.
+
+## Context and Output Self-Monitoring
+
+You have **128k context input** and **32k output tokens**. Everything you generate (tool calls, standup updates, git commits, verification output) counts against the output limit.
 
 Every 10 tasks, estimate and report:
 ```
 - [worker HH:MM] CONTEXT: ~XX%, [N] tasks done
 ```
 
-At 80%+, write HANDOFF summary and stop gracefully.
+At 90%+ context or when you sense output budget is running low, write HANDOFF summary and stop gracefully. Prioritize actual work over verbose logging.
 
 ## Execution Principles
 
-- NEVER ask clarifying questions -- use best judgment
+- NEVER ask clarifying questions — use best judgment
 - Match existing patterns in the codebase
 - If stuck after 1 retry, mark FAILED and move on
 - Write progress after EVERY task (never skip)
 - Git commit after EVERY task
 - Maximize work per request
-- Don't expect boss instructions mid-run -- boss is blocked while you work
+- Don't expect boss instructions mid-run — boss is blocked while you work

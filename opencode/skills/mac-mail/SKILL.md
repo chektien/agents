@@ -13,22 +13,22 @@ This skill provides guidelines for effectively searching, opening, and navigatin
 
 ### Using mail-search.sh
 
-The mail-search.sh script searches Apple Mail for student or specific sender emails:
+The mail-search.sh script searches Apple Mail for specific sender emails:
 
 ```bash
-osascript <SCRIPTS_PATH>/mail-search.sh "search terms"
+osascript <MAIL_SCRIPT_PATH>/scripts/mail.sh search "search terms"
 ```
 
 **Search patterns:**
-- Use student names, course codes, or keywords
+- Use sender names, project codes, or keywords
 - Searches recent mailboxes (inbox, sent, archives)
 - Returns matching email subjects and sender info
 - Results displayed in terminal for quick scanning
 
 **Example searches:**
 ```bash
-osascript <SCRIPTS_PATH>/mail-search.sh "CS101 assignment"
-osascript <SCRIPTS_PATH>/mail-search.sh "sender-name"
+osascript <MAIL_SCRIPT_PATH>/scripts/mail.sh search "project-name"
+osascript <MAIL_SCRIPT_PATH>/scripts/mail.sh search "sender-name"
 ```
 
 ### Interpreting Search Results
@@ -48,7 +48,7 @@ Use these to identify the specific email you need.
 Once you identify the email from search results, open it directly:
 
 ```bash
-osascript <SCRIPTS_PATH>/mail-open.sh "message ID or subject"
+osascript <MAIL_SCRIPT_PATH>/scripts/mail.sh open <number>
 ```
 
 This brings Apple Mail to foreground with the specific message selected.
@@ -67,7 +67,7 @@ If needed, you can guide users to:
 - Only search mail when explicitly requested
 - Do not summarize or extract content from personal emails
 - Focus on identifying presence/location of messages, not content
-- Respect confidentiality of student and colleague communications
+- Respect confidentiality of personal and colleague communications
 
 **Automation limits:**
 - Scripts can search and open, but cannot read message content programmatically
@@ -76,7 +76,7 @@ If needed, you can guide users to:
 
 ## Integration with Standup Workflow
 
-When processing mail-related commands:
+When processing `/mail-search` command:
 1. Execute search with provided terms
 2. Present results to user
 3. Do not automatically open or extract from found messages
@@ -103,7 +103,7 @@ When processing mail-related commands:
 ## Best Practices
 
 1. **Search before asking** - Try mail search before requesting clarifying information
-2. **Use specific terms** - Course codes, student IDs, dates work better than vague terms
+2. **Use specific terms** - Project codes, identifiers, dates work better than vague terms
 3. **Respect privacy** - Don't extract or summarize email content automatically
 4. **Guide, don't automate** - Help users find emails, let them read the content
-5. **Check multiple mailboxes** - Students may email from personal or university accounts
+5. **Check multiple mailboxes** - Senders may email from different accounts

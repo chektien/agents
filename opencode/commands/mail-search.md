@@ -1,5 +1,5 @@
 ---
-description: Search Apple Mail for student emails and module correspondence
+description: Search Apple Mail for emails and correspondence
 ---
 
 Search Apple Mail for emails matching a search term.
@@ -23,7 +23,7 @@ Workflow:
 4. **Draft replies**: Create draft text for user review - **NEVER send automatically**
    - User must review and send manually via Mail.app
 
-Common search terms: course codes, module names, student names, student IDs
+Common search terms: project codes, module names, sender names, identifiers
 
 Related resources:
 - Mail scripts: `<MAIL_SCRIPT_PATH>/scripts/mail*.sh`

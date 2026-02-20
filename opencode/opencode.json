@@ -71,6 +71,8 @@
       "~/.zshrc": "ask",
       "~/.bashrc": "ask",
       "~/Library/**": "ask",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/Downloads/**": "allow",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/notes/**": "allow",
       "<YOUR_WORKING_DIR>/**": "allow"
     },
     "write": {
@@ -83,6 +85,8 @@
       "~/.zshrc": "ask",
       "~/.bashrc": "ask",
       "~/Library/**": "ask",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/Downloads/**": "allow",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/notes/**": "allow",
       "<YOUR_WORKING_DIR>/**": "allow"
     },
     "edit": {
@@ -95,6 +99,8 @@
       "~/.zshrc": "ask",
       "~/.bashrc": "ask",
       "~/Library/**": "ask",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/Downloads/**": "allow",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/notes/**": "allow",
       "<YOUR_WORKING_DIR>/**": "allow"
     },
     "list": {
@@ -102,6 +108,8 @@
       "~/.ssh/**": "ask",
       "~/.aws/**": "ask",
       "~/Library/**": "ask",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/Downloads/**": "allow",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/notes/**": "allow",
       "<YOUR_WORKING_DIR>/**": "allow"
     },
     "glob": {
@@ -114,6 +122,8 @@
       "~/.npmrc": "ask",
       "~/.netrc": "ask",
       "~/Library/**": "ask",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/Downloads/**": "allow",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/notes/**": "allow",
       "<YOUR_WORKING_DIR>/**": "allow"
     },
     "todoread": "allow",
@@ -158,6 +168,8 @@
       "~/.zshrc": "ask",
       "~/.bashrc": "ask",
       "~/Library/**": "ask",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/Downloads/**": "allow",
+      "~/Library/Mobile Documents/com~apple~CloudDocs/notes/**": "allow",
       "<YOUR_WORKING_DIR>/**": "allow",
       "~": "ask"
     },
@@ -203,13 +215,33 @@
           "thinker": "allow",
           "worker": "allow",
           "reviewer": "allow",
-          "vision": "allow"
+          "vision": "allow",
+          "covision": "allow",
+          "coworker": "allow"
         },
         "skill": {
           "*": "allow"
         }
       },
       "prompt": "{file:./prompts/boss.md}"
+    },
+    "altboss": {
+      "mode": "primary",
+      "model": "<YOUR_STRONGER_MODEL>",
+      "permission": {
+        "task": {
+          "thinker": "allow",
+          "worker": "allow",
+          "reviewer": "allow",
+          "vision": "allow",
+          "covision": "allow",
+          "coworker": "allow"
+        },
+        "skill": {
+          "*": "allow"
+        }
+      },
+      "prompt": "{file:./prompts/altboss.md}"
     },
     "worker": {
       "mode": "subagent",
@@ -248,8 +280,18 @@
       "tools": {
         "question": false
       },
-      "description": "Handles all visual tasks including reading PDFs with embedded images, Chrome DevTools debugging, screenshots, diagrams, and any visual content analysis",
+      "description": "Handles visual tasks including PDFs, Chrome DevTools debugging, screenshots, diagrams, and visual analysis. 128k context, 64k output.",
       "prompt": "{file:./prompts/vision.md}"
+    },
+    "covision": {
+      "mode": "subagent",
+      "hidden": true,
+      "model": "<YOUR_HEAVY_VISION_MODEL>",
+      "tools": {
+        "question": false
+      },
+      "description": "Heavy-duty visual fallback for tasks that exceed vision's limits. 256k context, 96k output. Use for large PDFs, lengthy DOM snapshots, or image-heavy content.",
+      "prompt": "{file:./prompts/covision.md}"
     },
     "thinker": {
       "mode": "subagent",
