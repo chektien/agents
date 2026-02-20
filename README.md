@@ -80,7 +80,7 @@ export GOOGLE_GEMINI_API_KEY="your-key-here"
 
 ## Multi-Agent Orchestration
 
-The boss orchestration system uses a Plan → Delegate → Validate → Re-delegate cycle with specialized subagents for different tasks.
+The boss orchestration system uses a Plan → Delegate → Validate → Re-delegate cycle with specialized subagents for different tasks. All coordination happens through `standup.md` with timestamped `[boss HH:MM]` markers.
 
 ### Architecture Overview
 
@@ -88,57 +88,74 @@ The boss orchestration system uses a Plan → Delegate → Validate → Re-deleg
 flowchart TB
     subgraph BOSS["Boss (Orchestrator)"]
         direction TB
-        P[Plan] --> D[Delegate]
-        D --> V[Validate]
-        V --> R{PASS?}
-        R -->|FAIL| RD[Re-delegate<br/>max 10 rounds]
-        RD --> V
+        P["Plan<br/>(read standup.md)"] --> D[Delegate]
+        D --> V["Validate<br/>(spawn reviewer)"]
+        V --> R{Reviewer<br/>verdict?}
         R -->|PASS| DONE[Task Complete]
+        R -->|FAIL| LIMIT{Round<br/>over 10?}
+        LIMIT -->|Yes| USER["ESCALATE<br/>to user"]
+        LIMIT -->|No| R3{Round 3?}
+        R3 -->|Yes| TK["Consult Thinker<br/>(diagnose, new strategy)"]
+        TK --> RD
+        R3 -->|No| CAP{Capacity<br/>failure?}
+        CAP -->|Yes| ESC["Switch to<br/>Coworker"]
+        ESC --> RD
+        CAP -->|No| RD["Re-delegate<br/>(worker or coworker)"]
+        RD --> V
     end
 
     subgraph SUBAGENTS["Subagents"]
         direction LR
-        W[Worker<br/>128k/32k]
-        CW[Coworker<br/>400k/128k]
-        RV[Reviewer<br/>Fresh Context]
-        T[Thinker<br/>Read-only]
-        VV[Vision<br/>128k/64k]
-        CV[Covision<br/>256k/96k]
+        W["Worker<br/>128k / 32k"]
+        CW["Coworker<br/>400k / 128k"]
+        RV["Reviewer<br/>Fresh Context"]
+        T["Thinker<br/>Read-only"]
+        VV["Vision<br/>128k / 64k"]
+        CV["Covision<br/>256k / 96k"]
     end
 
-    subgraph TASKS["Task Types"]
+    subgraph TASKS["Task Routing"]
         direction LR
-        CODE[Code/Writing/Config]
-        VISUAL[Visual/PDFs/Screenshots]
-        COMPLEX[Complex Tasks]
+        CODE[Code / Writing / Config]
+        VISUAL[Visual / PDFs / Screenshots]
     end
 
     CODE --> W
     VISUAL --> VV
     VV -.->|overflow| CV
-    W -.->|fail/limits| CW
-    W --> RV
-    CW --> RV
-    RV --> V
 
-    T -.->|planning| P
-    T -.->|diagnosis| RD
+    D -->|spawn| W
+    D -->|spawn| VV
+    D -->|spawn| CW
+    W -->|done| V
+    CW -->|done| V
+    VV -->|done| V
+    CV -->|done| V
+    V -->|spawn| RV
+    RV -->|verdict| R
+
+    P -.->|"5+ tasks or<br/>complex session"| T
+    TK -.->|spawn| T
 
     style BOSS fill:#e1f5fe,stroke:#01579b
     style SUBAGENTS fill:#f3e5f5,stroke:#4a148c
     style TASKS fill:#e8f5e9,stroke:#1b5e20
+    style USER fill:#ffcdd2,stroke:#b71c1c
+    style TK fill:#fff9c4,stroke:#f57f17
+    style ESC fill:#fff9c4,stroke:#f57f17
 ```
 
 ### Execution Flow
 
-1. **Plan**: Boss reads standup.md and creates an execution plan, consulting @thinker for complex scenarios
-2. **Delegate**: Boss spawns subagents in parallel for independent tasks
-   - Code/config tasks → `worker` (cost-effective, 128k context)
-   - Visual tasks → `vision` (128k context) or `covision` for heavy payloads (256k context)
-   - Complex tasks → `coworker` (400k context, fallback)
-3. **Validate**: Boss delegates verification to `reviewer` for independent fresh-eyes quality check
-4. **Re-delegate**: If reviewer returns FAIL, boss re-delegates fixes (max 10 rounds per task)
-5. **Escalate**: On repeated failures, boss consults `thinker` for diagnosis
+1. **Plan**: Boss reads standup.md and creates an execution plan. For 5+ tasks, unfamiliar codebases, or unclear dependencies, boss consults `thinker` (read-only strategic planner) for a structured plan.
+2. **Delegate**: Boss spawns subagents in parallel for independent tasks. Tasks sharing files or with dependencies are grouped into the same subagent instance.
+   - Code/config/writing tasks → `worker` (cost-effective, 128k context)
+   - Visual tasks (PDFs, DevTools, screenshots) → `vision` (128k context); `covision` for heavy payloads (256k context)
+3. **Validate**: Boss always delegates verification to `reviewer` (never reviews itself). Reviewer gets fresh context, the original acceptance criteria, and file paths changed. Multiple reviewers can run in parallel for independent tasks.
+4. **Re-delegate** (max 10 rounds per task): If reviewer returns FAIL, boss spawns worker again with all prior reviewer findings accumulated (not just the latest) to prevent regressions.
+   - **Round 3 trigger**: On the 3rd failure, boss consults `thinker` before round 4. Thinker diagnoses the stuck approach and suggests a new strategy. Boss writes `[boss HH:MM] THINKER CONSULTED:` marker.
+   - **Coworker escalation**: If worker hits context/output limits (truncated output, HANDOFF, "context limit"), boss escalates to `coworker` (400k context, 128k output) and continues the loop with coworker in place of worker. Boss writes `[boss HH:MM] ESCALATED TO COWORKER:` marker.
+5. **Escalate**: If a task still fails after 10 rounds, boss marks `[boss HH:MM] ESCALATE:` for user attention.
 
 ### Agent Context/Output Limits
 
