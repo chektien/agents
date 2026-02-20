@@ -52,8 +52,8 @@ The following opencode commands automate standup and email workflows. Commands r
 
 ### Orchestration Commands
 
-- **`/go-superboss`** - Start superboss orchestration with solo/delegate modes to execute DETAILED-TODO (RECOMMENDED). See `opencode/commands/go-superboss.md`
-- **`/go-boss`** - Start boss-worker-coworker orchestration to execute DETAILED-TODO (legacy). See `opencode/commands/go-boss.md`
+- **`/go-boss`** - Start boss orchestration with Plan/Delegate/Validate/Re-delegate cycle (RECOMMENDED). See `opencode/commands/go-boss.md`
+- **`/go-altboss`** - Alternative boss with different model. See `opencode/commands/go-altboss.md`
 
 ### Standup & Task Management
 
@@ -68,72 +68,67 @@ The following opencode commands automate standup and email workflows. Commands r
 
 For non-opencode agents: refer to the specific command file for workflow details and adjust paths accordingly.
 
-## Multi-Agent Orchestration Systems
+## Multi-Agent Orchestration
 
-### Current System (V3): Superboss-Hardworker
+The boss orchestration system uses a Plan → Delegate → Validate → Re-delegate cycle with specialized subagents:
 
-The superboss/hardworker system provides optimized orchestration for large task queues:
+### Architecture
 
-**Architecture Decision:**
-- **Solo Mode**: All tasks fit in context, or most are complex → superboss executes everything (1 request)
-- **Delegate Mode**: Too many tasks or mostly routine → superboss spawns hardworker once (Phase 1), then finishes remainder (Phase 2) (2 requests)
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      BOSS (Orchestrator)                     │
+│  Plan → Delegate → Validate → Re-delegate (max 10 rounds)   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+           ┌──────────────────┼──────────────────┐
+           │                  │                  │
+           ▼                  ▼                  ▼
+    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+    │   WORKER     │  │   COWORKER   │  │   REVIEWER   │
+    │  128k/32k    │  │  400k/128k   │  │ Fresh Context│
+    │ Cost-effective│  │ Fallback     │  │ Quality Gate │
+    └──────────────┘  └──────────────┘  └──────────────┘
+                              │
+           ┌──────────────────┼──────────────────┐
+           │                  │                  │
+           ▼                  ▼                  ▼
+    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+    │   THINKER    │  │    VISION    │  │   COVISION   │
+    │  Read-only   │  │  128k/64k    │  │  256k/96k    │
+    │ Planning     │  │ Visual Tasks │  │ Heavy Visual │
+    └──────────────┘  └──────────────┘  └──────────────┘
+```
 
-**Key Design Constraints:**
-1. **Synchronous/Blocking**: When superboss spawns hardworker, superboss blocks and cannot intervene
-2. **Two Phases Maximum**: Hardworker runs once with full task queue; superboss finishes remaining work
-3. **No Real-time Coordination**: Standup.md is a record for review, not a communication channel during execution
-4. **Per-task Git Commits**: Hardworker commits after every task (superboss uses this to review and fix issues)
-5. **Cost Optimization**: Maximum 2 GitHub Copilot requests per session
+### Execution Flow
 
-**Execution Flow:**
-1. Superboss reads standup.md and evaluates task count + complexity
-2. Superboss decides: solo mode or delegate mode
-3. **Delegate mode only:**
-   - Superboss provides full task queue and context to hardworker
-   - Hardworker executes serially, writes progress to standup.md, commits per task
-   - Superboss is BLOCKED (cannot monitor)
-   - Hardworker marks FAILED tasks and continues (doesn't stop)
-4. **Phase 2 (delegate only) or immediately (solo):**
-   - Superboss reads standup.md for hardworker results AND any user updates
-   - Superboss verifies all DONE tasks (syntax, logic, references, etc.)
-   - Superboss fixes any verification failures immediately
-   - Superboss picks up any FAILED tasks or remaining work
-   - No more spawning — superboss finishes everything
+1. **Plan**: Boss reads standup.md and creates execution plan (consults @thinker for complex scenarios)
+2. **Delegate**: Boss spawns subagents in parallel for independent tasks
+   - Code/config → `worker` (128k context, cost-effective)
+   - Visual tasks → `vision` (128k context) or `covision` for heavy payloads (256k context)
+   - Complex tasks → `coworker` (400k context, fallback)
+3. **Validate**: Boss delegates to `@reviewer` for independent fresh-eyes quality check
+4. **Re-delegate**: If reviewer returns FAIL, boss re-delegates fixes (max 10 rounds)
+5. **Escalate**: On round 3, boss consults `@thinker` for diagnosis; on capacity issues, escalates to `coworker`
 
-**Progress Markers:**
-- `[superboss HH:MM] PLAN: Solo/Delegate` - Decision made
-- `[hardworker HH:MM] STARTED/DONE/FAILED Task X` - Task status
-- `[superboss HH:MM] FIXING/PICKING UP Task X` - Remedial work
-- `[superboss HH:MM] SESSION COMPLETE` - Summary
+### Subagent Context/Output Limits
 
-### Legacy System (V2): Boss-Worker-Coworker
+| Agent | Context | Output | Purpose |
+|-------|---------|--------|---------|
+| worker | 128k | 32k | Cost-effective task execution |
+| coworker | 400k | 128k | Fallback for complex tasks |
+| reviewer | 128k | 32k | Independent quality verification |
+| vision | 128k | 64k | Visual tasks, screenshots, PDFs |
+| covision | 256k | 96k | Heavy visual payloads |
+| thinker | varies | varies | Read-only strategic planning |
 
-The original three-tier system for backward compatibility. Now updated (V3) with Plan, Delegate, Validate, Re-delegate cycle using reviewer/thinker/vision subagents:
+### Progress Markers
 
-**Architecture:**
-- **Boss** (stronger model): Orchestrator, reads standup, plans, verifies quality
-- **Worker** (cheaper model): Executes most tasks cost-effectively
-- **Coworker** (fallback model): Handles complex tasks when worker fails
-- **Reviewer** (subagent): Independent quality verification with fresh context
-- **Thinker** (subagent): Strategic planning and failure diagnosis (read-only)
-- **Vision** (subagent): Visual tasks, screenshots, PDF analysis
-
-**Execution Flow:**
-1. Boss reads standup.md and creates detailed execution plan (consults @thinker for complex planning)
-2. Boss delegates to worker for each task batch
-3. Boss validates results via @reviewer (fresh-eyes quality check)
-4. If reviewer finds issues, boss re-delegates fixes (max 10 rounds per task)
-5. If worker fails after retries, boss escalates to coworker
-6. Boss uses @vision for any visual verification needs
-7. Boss verifies all work before marking complete
-
-**Key Differences from V3 Superboss:**
-- Boss can monitor and intervene during worker execution (not blocking)
-- Escalation chain: worker → coworker → boss
-- Automatic respawning of workers for remaining tasks after failure
-- Re-delegation loop with @reviewer validation (max 10 rounds)
-- @thinker consultation for planning and failure diagnosis
-- @vision for visual tasks and verification
+- `[worker HH:MM] STARTED/DONE/FAILED Task X` - Task status
+- `[boss HH:MM] REDELEGATING (round N/10)` - Fix attempts
+- `[boss HH:MM] THINKER CONSULTED` - Strategy consultation
+- `[boss HH:MM] ESCALATED TO COWORKER` - Capacity escalation
+- `[coworker HH:MM] DONE Task X` - Fallback execution
+- `[boss HH:MM] SESSION COMPLETE` - Session summary
 
 ## Path Placeholders
 

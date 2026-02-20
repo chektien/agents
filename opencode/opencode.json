@@ -307,32 +307,6 @@
       },
       "description": "Read-only strategic consultant and planner. Produces structured execution plans for complex sessions, and diagnoses repeated worker failures. Never modifies files.",
       "prompt": "{file:./prompts/thinker.md}"
-    },
-    "superboss": {
-      "mode": "primary",
-      "model": "<YOUR_STRONGER_MODEL>",
-      "tools": {
-        "question": false
-      },
-      "permission": {
-        "task": {
-          "hardworker": "allow"
-        },
-        "skill": {
-          "*": "allow"
-        }
-      },
-      "prompt": "{file:./prompts/superboss.md}"
-    },
-    "hardworker": {
-      "mode": "subagent",
-      "hidden": true,
-      "model": "<YOUR_WORKER_MODEL>",
-      "tools": {
-        "question": false
-      },
-      "steps": 50,
-      "prompt": "{file:./prompts/hardworker.md}"
     }
   }
 }

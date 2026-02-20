@@ -10,7 +10,7 @@ Configuration files and instructions for AI coding assistants like opencode, cla
 - `opencode/` - Configuration for [opencode](https://opencode.ai/) TUI
   - `opencode.json` - Main configuration file with providers, MCP servers, permissions, and agents
   - `commands/` - Slash commands for common workflows (standup, mail, orchestration, review)
-  - `prompts/` - Agent system prompts (superboss, hardworker, boss, altboss, worker, coworker, reviewer, thinker, vision, covision, build)
+  - `prompts/` - Agent system prompts (boss, altboss, worker, coworker, reviewer, thinker, vision, covision, build)
   - `skills/` - Reusable instruction modules for common tasks (git-checkpoint, mac-mail, standup-coordination, task-execution, frontend-design)
 
 ## Installation
@@ -27,204 +27,154 @@ Configuration files and instructions for AI coding assistants like opencode, cla
    
    **Option A: Copy files (simplest)**
    ```bash
-   # Create the opencode config directory if it doesn't exist
    mkdir -p ~/.config/opencode/commands
-   
-    # Copy configuration files from this repo (replace <REPO_CLONE_PATH> with your actual path)
-    cp <REPO_CLONE_PATH>/agents/opencode/opencode.json ~/.config/opencode/
-    cp <REPO_CLONE_PATH>/agents/opencode/commands/*.md ~/.config/opencode/commands/
-    
-    # Copy prompts and skills
-    mkdir -p ~/.config/opencode/prompts
-    cp <REPO_CLONE_PATH>/agents/opencode/prompts/*.md ~/.config/opencode/prompts/
-    
-    # Copy skills (preserving directory structure)
-    cp -r <REPO_CLONE_PATH>/agents/opencode/skills/* ~/.config/opencode/skills/
-   
-   # Example if cloned to ~/repos/:
-   # cp ~/repos/agents/opencode/opencode.json ~/.config/opencode/
+   cp <REPO_CLONE_PATH>/agents/opencode/opencode.json ~/.config/opencode/
+   cp <REPO_CLONE_PATH>/agents/opencode/commands/*.md ~/.config/opencode/commands/
+   mkdir -p ~/.config/opencode/prompts
+   cp <REPO_CLONE_PATH>/agents/opencode/prompts/*.md ~/.config/opencode/prompts/
+   cp -r <REPO_CLONE_PATH>/agents/opencode/skills/* ~/.config/opencode/skills/
    ```
    
    **Option B: Create symlinks (keeps files in sync with repo)**
    ```bash
-   # Create the config directory structure
    mkdir -p ~/.config/opencode/commands
-   
-    # Create symlinks (replace <REPO_CLONE_PATH> with your actual path)
-    ln -sf <REPO_CLONE_PATH>/agents/opencode/opencode.json ~/.config/opencode/opencode.json
-    
-    # Commands
-    for f in <REPO_CLONE_PATH>/agents/opencode/commands/*.md; do
-        ln -sf "$f" ~/.config/opencode/commands/
-    done
-    
-    # Prompts
-    mkdir -p ~/.config/opencode/prompts
-    for f in <REPO_CLONE_PATH>/agents/opencode/prompts/*.md; do
-        ln -sf "$f" ~/.config/opencode/prompts/
-    done
-    
-    # Skills
-    mkdir -p ~/.config/opencode/skills
-    for d in <REPO_CLONE_PATH>/agents/opencode/skills/*/; do
-        skill_name=$(basename "$d")
-        ln -sf "$d" ~/.config/opencode/skills/"$skill_name"
-    done
-   
-   # Example if cloned to ~/repos/:
-   # ln -sf ~/repos/agents/opencode/opencode.json ~/.config/opencode/opencode.json
+   ln -sf <REPO_CLONE_PATH>/agents/opencode/opencode.json ~/.config/opencode/opencode.json
+   for f in <REPO_CLONE_PATH>/agents/opencode/commands/*.md; do
+       ln -sf "$f" ~/.config/opencode/commands/
+   done
+   mkdir -p ~/.config/opencode/prompts
+   for f in <REPO_CLONE_PATH>/agents/opencode/prompts/*.md; do
+       ln -sf "$f" ~/.config/opencode/prompts/
+   done
+   mkdir -p ~/.config/opencode/skills
+   for d in <REPO_CLONE_PATH>/agents/opencode/skills/*/; do
+       skill_name=$(basename "$d")
+       ln -sf "$d" ~/.config/opencode/skills/"$skill_name"
+   done
    ```
 
 3. **Configure placeholder values** in `~/.config/opencode/opencode.json`:
-   - `<YOUR_PREFERRED_TASK_MODEL>` - Your preferred model for task execution
+   - Replace `<YOUR_*_MODEL>` placeholders with your preferred models
+   - Replace `<YOUR_WORKING_DIR>` with your projects directory
    - API keys - See [Security Warning](#security-warning) below
 
 ### Security Warning
 
 **DO NOT paste API keys directly into `opencode.json` if this file is in a git repository or shared location.**
 
-Instead, use one of these secure methods:
-
-**Option 1: Environment Variables (Recommended)**
+Use environment variables instead:
 ```json
 {
   "provider": {
     "google": {
-      "options": { "apiKey": "{env:GOOGLE_GEMINI_API_KEY}" },
-      "models": { "gemini-2.5-flash": { "name": "Gemini 2.5 Flash" } }
-    }
-  },
-  "mcp": {
-    "brave-search": {
-      "environment": { "BRAVE_API_KEY": "{env:BRAVE_API_KEY}" }
+      "options": { "apiKey": "{env:GOOGLE_GEMINI_API_KEY}" }
     }
   }
 }
 ```
 
-Then set environment variables in your shell profile:
+Then set in your shell profile:
 ```bash
 export GOOGLE_GEMINI_API_KEY="your-key-here"
-export BRAVE_API_KEY="your-key-here"
 ```
 
-**Option 2: Separate, Non-Tracked Config File**
-Create a local config at `~/.config/opencode/opencode.local.json` that is NOT in git, then reference it from the main config or use the `/config` command in opencode to switch to it.
+## Multi-Agent Orchestration
 
-**Option 3: Use the `/connect` Command**
-In the opencode TUI, use the `/connect` command to authenticate with providers interactively without storing keys in config files.
+The boss orchestration system uses a Plan → Delegate → Validate → Re-delegate cycle with specialized subagents for different tasks.
 
-4. **Update paths in slash commands**:
-   - Replace `<YOUR_STANDUP_FILE_PATH>` in command files with your actual standup file path
-   - Example: `/Users/username/Library/Mobile Documents/com~apple~CloudDocs/notes/standup.md`
+### Architecture Overview
 
-5. **Place AGENTS.md** in your working directory or notes folder where AI assistants can reference it (replace `<REPO_CLONE_PATH>`):
-   ```bash
-   cp <REPO_CLONE_PATH>/agents/AGENTS.md ~/Library/Mobile\ Documents/com~apple~CloudDocs/notes/
-   # or
-   cp <REPO_CLONE_PATH>/agents/AGENTS.md ~/notes/
-   
-   # Example:
-   # cp ~/repos/agents/AGENTS.md ~/Library/Mobile\ Documents/com~apple~CloudDocs/notes/
-   ```
+```mermaid
+flowchart TB
+    subgraph BOSS["Boss (Orchestrator)"]
+        direction TB
+        P[Plan] --> D[Delegate]
+        D --> V[Validate]
+        V --> R{PASS?}
+        R -->|FAIL| RD[Re-delegate<br/>max 10 rounds]
+        RD --> V
+        R -->|PASS| DONE[Task Complete]
+    end
 
-### File Locations
+    subgraph SUBAGENTS["Subagents"]
+        direction LR
+        W[Worker<br/>128k/32k]
+        CW[Coworker<br/>400k/128k]
+        RV[Reviewer<br/>Fresh Context]
+        T[Thinker<br/>Read-only]
+        VV[Vision<br/>128k/64k]
+        CV[Covision<br/>256k/96k]
+    end
 
-| File in Repo | Installs To |
-|--------------|-------------|
-| `opencode/opencode.json` | `~/.config/opencode/opencode.json` |
-| `opencode/commands/*.md` | `~/.config/opencode/commands/` |
-| `opencode/prompts/*.md` | `~/.config/opencode/prompts/` |
-| `opencode/skills/*/` | `~/.config/opencode/skills/` |
-| `AGENTS.md` | Your notes/working directory (e.g., `~/notes/` or `~/Library/Mobile Documents/com~apple~CloudDocs/notes/`) |
+    subgraph TASKS["Task Types"]
+        direction LR
+        CODE[Code/Writing/Config]
+        VISUAL[Visual/PDFs/Screenshots]
+        COMPLEX[Complex Tasks]
+    end
+
+    CODE --> W
+    VISUAL --> VV
+    VV -.->|overflow| CV
+    W -.->|fail/limits| CW
+    W --> RV
+    CW --> RV
+    RV --> V
+
+    T -.->|planning| P
+    T -.->|diagnosis| RD
+
+    style BOSS fill:#e1f5fe,stroke:#01579b
+    style SUBAGENTS fill:#f3e5f5,stroke:#4a148c
+    style TASKS fill:#e8f5e9,stroke:#1b5e20
+```
+
+### Execution Flow
+
+1. **Plan**: Boss reads standup.md and creates an execution plan, consulting @thinker for complex scenarios
+2. **Delegate**: Boss spawns subagents in parallel for independent tasks
+   - Code/config tasks → `worker` (cost-effective, 128k context)
+   - Visual tasks → `vision` (128k context) or `covision` for heavy payloads (256k context)
+   - Complex tasks → `coworker` (400k context, fallback)
+3. **Validate**: Boss delegates verification to `reviewer` for independent fresh-eyes quality check
+4. **Re-delegate**: If reviewer returns FAIL, boss re-delegates fixes (max 10 rounds per task)
+5. **Escalate**: On repeated failures, boss consults `thinker` for diagnosis
+
+### Agent Context/Output Limits
+
+| Agent | Context | Output | Purpose |
+|-------|---------|--------|---------|
+| worker | 128k | 32k | Cost-effective task execution |
+| coworker | 400k | 128k | Fallback for complex/large tasks (3x context, 4x output) |
+| reviewer | 128k | 32k | Independent quality verification |
+| vision | 128k | 64k | Visual tasks, screenshots, PDFs |
+| covision | 256k | 96k | Heavy visual payloads, large PDFs |
+| thinker | varies | varies | Read-only strategic planning |
+
+### Commands
+
+```bash
+/go-boss      # Start boss orchestration (recommended)
+/go-altboss   # Alternative boss with different model
+/review-loop  # Fresh-eyes review: N workers sequentially review/fix
+```
 
 ## Agents
 
-### Primary Agents
-
-| Agent | Mode | Model | Context/Output | Purpose |
-|-------|------|-------|----------------|---------|
-| `task` | primary | `<YOUR_PREFERRED_TASK_MODEL>` | varies | Default task execution |
-| `build` | primary | `<YOUR_STRONGER_MODEL>` | varies | Code implementation and writing |
-| `plan` | primary | `<YOUR_STRONGER_MODEL>` | varies | Planning and architecture |
-| `simple` | primary | `<YOUR_LIGHTWEIGHT_MODEL>` | varies | Simple tasks with minimal overhead |
-
-### Orchestration Agents (V3)
-
-#### Superboss-Hardworker System
-
-| Agent | Mode | Model | Context/Output | Purpose |
-|-------|------|-------|----------------|---------|
-| `superboss` | primary | `<YOUR_STRONGER_MODEL>` | varies | Solo/delegate orchestration, quality verification |
-| `hardworker` | subagent (hidden) | `<YOUR_WORKER_MODEL>` | 128k/32k | Serial task execution, per-task git commits |
-
-#### Boss-Worker-Coworker System
-
-| Agent | Mode | Model | Context/Output | Purpose |
-|-------|------|-------|----------------|---------|
-| `boss` | primary | `<YOUR_STRONGER_MODEL>` | varies | Plan/Delegate/Validate/Re-delegate orchestration |
-| `altboss` | primary | `<YOUR_STRONGER_MODEL>` | varies | Alternative boss with different model |
-| `worker` | subagent (hidden) | `<YOUR_WORKER_MODEL>` | 128k/32k | Cost-effective task execution |
-| `coworker` | subagent (hidden) | `<YOUR_FALLBACK_MODEL>` | 400k/128k | Fallback for complex tasks, 3x context |
-| `reviewer` | subagent (hidden) | `<YOUR_REVIEW_MODEL>` | 128k/32k | Independent quality verification |
-| `thinker` | subagent (hidden) | `<YOUR_THINKING_MODEL>` | varies | Read-only strategic planning |
-| `vision` | subagent (hidden) | `<YOUR_VISION_MODEL>` | 128k/64k | Visual tasks, screenshots, PDF analysis |
-| `covision` | subagent (hidden) | `<YOUR_HEAVY_VISION_MODEL>` | 256k/96k | Heavy-duty visual fallback |
-
-### Using the Multi-Agent Orchestration Systems
-
-#### Superboss-Hardworker (V3 - Recommended)
-
-The superboss system provides optimized orchestration with solo/delegate modes:
-
-```bash
-# Start superboss to work through DETAILED-TODO (RECOMMENDED)
-/go-superboss
-```
-
-**How it works:**
-1. **Superboss** (stronger model) reads standup.md and analyzes all tasks
-2. **Superboss evaluates**: Task count and complexity
-3. **Solo mode**: Superboss executes all tasks directly (fits in context, or mostly complex)
-4. **Delegate mode**: Superboss spawns Hardworker for routine tasks (Phase 1), then finishes remaining work (Phase 2)
-5. **Superboss verifies** all work before completion
-
-**Benefits:**
-- Optimized for large task queues (delegate mode)
-- Two-phase execution with no respawning
-- Quality verification by stronger model
-- Per-task git commits enable granular review
-- Maximum 2 GitHub Copilot requests per session
-
-#### Boss-Worker-Coworker (V3 Architecture)
-
-The three-tier orchestration system uses a Plan, Delegate, Validate, Re-delegate cycle with reviewer/thinker/vision subagents:
-
-```bash
-# Start the boss with V3 architecture
-/go-boss
-
-# Alternative boss with different model
-/go-altboss
-```
-
-**How it works:**
-1. **Boss** (stronger model) reads standup.md, consults **@thinker** for strategic planning
-2. **Boss delegates** to **Worker** (worker model) for cost-effective execution
-3. **Boss validates** results via **@reviewer** (independent fresh-eyes quality check)
-4. If **Reviewer** finds issues, **Boss** re-delegates fixes (max 10 rounds per task)
-5. If **Worker** fails, **Boss** escalates to **Coworker** (fallback model) for complex tasks
-6. **Boss** uses **@vision** for any visual verification needs
-7. **Boss** uses **@covision** for heavy visual payloads (large PDFs, lengthy DOM snapshots)
-
-**Benefits:**
-- 80% of work done by cheaper worker model
-- Quality verification by independent reviewer subagent
-- Re-delegation loop ensures issues get fixed (max 10 rounds)
-- Strategic planning via thinker subagent
-- Visual verification via vision/covision subagents
-- Automatic recovery and escalation on failures
-- Progress tracked in standup.md with timestamped markers
+| Agent | Mode | Model | Purpose |
+|-------|------|-------|---------|
+| `task` | primary | `<YOUR_PREFERRED_TASK_MODEL>` | Default task execution |
+| `build` | primary | `<YOUR_STRONGER_MODEL>` | Code implementation and writing |
+| `plan` | primary | `<YOUR_STRONGER_MODEL>` | Planning and architecture |
+| `boss` | primary | `<YOUR_STRONGER_MODEL>` | Orchestration with Plan/Delegate/Validate/Re-delegate |
+| `altboss` | primary | `<YOUR_STRONGER_MODEL>` | Alternative boss with different model |
+| `simple` | primary | `<YOUR_LIGHTWEIGHT_MODEL>` | Simple tasks with minimal overhead |
+| `worker` | subagent | `<YOUR_WORKER_MODEL>` | Cost-effective task execution |
+| `coworker` | subagent | `<YOUR_FALLBACK_MODEL>` | Fallback for complex tasks |
+| `reviewer` | subagent | `<YOUR_WORKER_MODEL>` | Independent quality verification |
+| `thinker` | subagent | `<YOUR_STRONGER_MODEL>` | Read-only strategic planning |
+| `vision` | subagent | `<YOUR_VISION_MODEL>` | Visual tasks and PDF analysis |
+| `covision` | subagent | `<YOUR_HEAVY_VISION_MODEL>` | Heavy-duty visual fallback |
 
 ## Slash Commands
 
@@ -232,7 +182,6 @@ The three-tier orchestration system uses a Plan, Delegate, Validate, Re-delegate
 
 | Command | Description |
 |---------|-------------|
-| `/go-superboss` | Start superboss orchestration (solo or delegate mode) - RECOMMENDED |
 | `/go-boss` | Start boss orchestration with Plan/Delegate/Validate/Re-delegate cycle |
 | `/go-altboss` | Start altboss orchestration (alternative model) |
 | `/review-loop` | Fresh-eyes review loop: N workers sequentially review/fix subtasks |
@@ -240,7 +189,7 @@ The three-tier orchestration system uses a Plan, Delegate, Validate, Re-delegate
 | `/add-done` | Add DONE items from closed issues/PRs (today/tomorrow) |
 | `/standup-create` | Convert DETAILED-TODOs to standup TODO bullets |
 | `/standup-update` | Update standup.md after completing tasks |
-| `/open-standup` | Open Safari/arc with project boards and issue/PR links |
+| `/open-standup` | Open Safari with project boards and issue/PR links |
 | `/post-standup` | Post standup to Discord (test/prod/dry-run modes) |
 
 ### Mail & Communication
@@ -249,114 +198,45 @@ The three-tier orchestration system uses a Plan, Delegate, Validate, Re-delegate
 |---------|-------------|
 | `/mail-search` | Search Apple Mail for emails and correspondence |
 
-**Note**: Some commands reference external scripts (e.g., in your dotfiles). See command files for required scripts and update `<SCRIPTS_PATH>` placeholders.
-
 ## Customizing Paths
 
-The configuration uses several path placeholders that you must customize to your setup:
+The configuration uses placeholders that you must customize:
 
-### Path Placeholders in opencode.json
-- `<YOUR_WORKING_DIR>` → Your projects directory (e.g., `~/repos/`, `~/projects/`)
+### Path Placeholders
+- `<YOUR_WORKING_DIR>` → Your projects directory (e.g., `~/repos/`)
+- `<MAIL_SCRIPT_PATH>` → Path to scripts directory
+- `<NOTES_PATH>` → Path to your notes directory
 
-### Model Placeholders in opencode.json
-- `<YOUR_STRONGER_MODEL>` → Stronger model for orchestration and verification
-- `<YOUR_WORKER_MODEL>` → Worker model for cost-effective task execution
-- `<YOUR_FALLBACK_MODEL>` → Fallback model for complex tasks (400k context)
+### Model Placeholders
+- `<YOUR_STRONGER_MODEL>` → Stronger model for orchestration
+- `<YOUR_WORKER_MODEL>` → Worker model for cost-effective execution
+- `<YOUR_FALLBACK_MODEL>` → Fallback model (400k context)
 - `<YOUR_VISION_MODEL>` → Vision model for visual tasks
-- `<YOUR_HEAVY_VISION_MODEL>` → Heavy vision model for large visual payloads (256k context)
-- `<YOUR_LIGHTWEIGHT_MODEL>` → Lightweight model for simple tasks
-- `<YOUR_PREFERRED_TASK_MODEL>` → Default task execution model
-
-### Path Placeholders in Commands
-Some commands reference scripts in another directory. Replace these placeholders:
-
-- `<MAIL_SCRIPT_PATH>` → Path to scripts directory (e.g., `~/repos/dotfiles`, `~/repos/scripts`)
-- `<SCRIPTS_PATH>` → Path to scripts directory (same as above)
-- `<NOTES_PATH>` → Path to your notes directory (e.g., `~/Library/Mobile Documents/com~apple~CloudDocs/notes`, `~/notes`)
-
-**Example setup**:
-```bash
-# If you keep scripts in ~/repos/dotfiles
-export MAIL_SCRIPT_PATH="~/repos/dotfiles"
-export SCRIPTS_PATH="~/repos/dotfiles/scripts"
-export NOTES_PATH="~/Library/Mobile Documents/com~apple~CloudDocs/notes"
-```
-
-Then update the command files to use these environment variables, or replace the placeholders directly.
-
-## Customizing Your Working Directory
-
-The `opencode.json` config uses `<YOUR_WORKING_DIR>` as a placeholder for your projects folder. **You must replace this with your actual working directory path** (e.g., `~/repos/`, `~/projects/`, `~/code/`, etc.).
-
-Edit `~/.config/opencode/opencode.json` and replace all instances of:
-- `"<YOUR_WORKING_DIR>/**": "allow"` → `"~/your-actual-folder/**": "allow"`
-
-For example:
-```json
-{
-  "permission": {
-    "read": {
-      "~/repos/**": "allow",
-      "~/Downloads/**": "allow"
-    }
-  }
-}
-```
+- `<YOUR_HEAVY_VISION_MODEL>` → Heavy vision model (256k context)
 
 ## Updating Configurations
 
-To update configurations after pulling new changes:
-
 ```bash
-# If using symlinks (Option B above), changes are automatic
-# Just restart opencode to reload config
-
-    # If using copies (Option A above), re-copy the files:
-    cp <REPO_CLONE_PATH>/agents/opencode/opencode.json ~/.config/opencode/
-    cp <REPO_CLONE_PATH>/agents/opencode/commands/*.md ~/.config/opencode/commands/
-    cp <REPO_CLONE_PATH>/agents/opencode/prompts/*.md ~/.config/opencode/prompts/
-    cp -r <REPO_CLONE_PATH>/agents/opencode/skills/* ~/.config/opencode/skills/
-
-    # Example:
-    # cp ~/repos/agents/opencode/opencode.json ~/.config/opencode/
+# If using symlinks, changes are automatic after restart
+# If using copies:
+cp <REPO_CLONE_PATH>/agents/opencode/opencode.json ~/.config/opencode/
+cp <REPO_CLONE_PATH>/agents/opencode/commands/*.md ~/.config/opencode/commands/
+cp <REPO_CLONE_PATH>/agents/opencode/prompts/*.md ~/.config/opencode/prompts/
 ```
-
-## Git Aliases
-
-This repo includes a `.gitconfig` file with helpful aliases. To use it:
-
-```bash
-# In the repo directory
-git config --local include.path ../.gitconfig
-
-# Available aliases:
-git diff-config      # Compare repo vs installed config
-git backup-config    # Copy system config to repo
-git install-config   # Copy repo config to system
-git link-config      # Create symlinks from repo to ~/.config/opencode/
-```
-
-## Customization
-
-- Add project-specific AGENTS.md files to individual repos for repo-specific instructions
-- Create additional slash commands in `opencode/commands/` following the existing format
-- Adjust permissions in `opencode.json` based on your security requirements
-- Modify agent configurations (models, prompts, tools) as needed
 
 ## Troubleshooting
 
 **Config not loading:**
 - Verify files are in `~/.config/opencode/`
 - Check JSON syntax: `python -m json.tool ~/.config/opencode/opencode.json`
-- Restart opencode after config changes
 
 **Commands not appearing:**
 - Ensure command files are in `~/.config/opencode/commands/`
-- Check that files have `.md` extension and proper frontmatter
+- Check files have `.md` extension and proper frontmatter
 
 **Agent not found:**
-- Verify agent names in config match what you're trying to invoke
-- Check `mode` is set to `primary` for main agents or `subagent` for @mention agents
+- Verify agent names match what you're invoking
+- Check `mode` is set correctly (`primary` or `subagent`)
 
 ## License
 
